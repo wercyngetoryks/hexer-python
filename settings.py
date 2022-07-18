@@ -1,4 +1,4 @@
-import hex
+from pygame.math import Vector2
 
 
 class Settings:
@@ -13,8 +13,8 @@ class Settings:
         self.H = 5
         self.V = 5
         self.factor = 13.87 / 2
-        self.hsize = hex.Point(self.H * self.factor, self.V * self.factor)
-        self.origin = hex.Point(600, 400)
+        self.hsize = Vector2(self.H * self.factor, self.V * self.factor)
+        self.origin = Vector2(600, 400)
         self.offset_x = 30
         self.offset_y = 35
         self.scale = (60, 70)

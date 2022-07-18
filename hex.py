@@ -1,125 +1,99 @@
 from math import sqrt
 
+import pygame
+from settings import Settings
 
-class HexDirections():
-    """Class used solely to store 6 move vectors on hexagonal grid made of POINT TOP hexagons."""
+settings = Settings()
 
-    def __init__(self):
-        self.E = (1, 0, -1)
-        self.NE = (1, -1, 0)
-        self.NW = (0, -1, 1)
-        self.W = (-1, 0, 1)
-        self.SW = (-1, 1, 0)
-        self.SE = (0, 1, -1)
+HexDirections = {
+    'E': pygame.math.Vector3(1, 0, -1),
+    'NE': pygame.math.Vector3(1, -1, 0),
+    'NW': pygame.math.Vector3(0, -1, 1),
+    'W': pygame.math.Vector3(-1, 0, 1),
+    'SW': pygame.math.Vector3(-1, 1, 0),
+    'SE': pygame.math.Vector3(0, 1, -1)}
 
 
 class Orientation():
     """Class storing matrices for hex calculations"""
-
-    def __init__(self):
-        self.f0 = sqrt(3)
-        self.f1 = sqrt(3) / 2
-        self.f2 = 0
-        self.f3 = 3 / 2
-        self.b0 = sqrt(3) / 3
-        self.b1 = -1 / 3
-        self.b2 = 0
-        self.b3 = 2 / 3
-
-
-class Point():
-    """A simple point class."""
-
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    def pixel_to_hex(self, layout):
-        """Returns a Hex() coordinate from a given point."""
-        matrix = layout.orientation
-        new_x = (self.x - layout.origin.x) / layout.size.x
-        new_y = (self.y - layout.origin.y) / layout.size.y
-
-        q = matrix.b0 * new_x + matrix.b1 * new_y
-        r = matrix.b2 * new_x + matrix.b3 * new_y
-        s = -q - r
-
-        q_r = round(q)
-        r_r = round(r)
-        s_r = round(s)
-
-        q_diff = abs(q_r - q)
-        r_diff = abs(r_r - r)
-        s_diff = abs(s_r - s)
-
-        if q_diff > r_diff and q_diff > s_diff:
-            q_r = -r_r - s_r
-        elif r_diff > s_diff:
-            r_r = -q_r - s_r
-        else:
-            s_r = -q_r - r_r
-
-        return Hex(q_r, r_r, s_r)
+    f0 = sqrt(3)
+    f1 = sqrt(3) / 2
+    f2 = 0
+    f3 = 3 / 2
+    b0 = sqrt(3) / 3
+    b1 = -1 / 3
+    b2 = 0
+    b3 = 2 / 3
 
 
 class Layout():
     """Class used for calculating hex to pixel and pixel to hex"""
 
-    def __init__(self, size, origin):
+    def __init__(self):
         self.orientation = Orientation()
-        self.size = size
-        self.origin = origin
+        self.size = settings.hsize
+        self.origin = settings.origin
 
 
-class Hex():
-    """Class representing cube hexagonal coordinates."""
+class Point(pygame.math.Vector2):
+    """A simple point class."""
 
-    def __init__(self, q, r, s):
-        self.q = q
-        self.r = r
-        self.s = s
-        assert self.q + self.r + \
-            self.s == 0, f"Hex coordinates must sum to 0, but now it's {self.q + self.r + self.s}."
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.layout = Layout()
 
-    def __eq__(self, other):
-        """Function used to compare hex coordinates."""
-        return self.q == other.q and self.r == other.r and self.s == other.s
+    def pixel_to_hex(self):
+        """Returns a Hex() coordinate from a given point."""
+        matrix = self.layout.orientation
+        new_x = (self.x - self.layout.origin.x) / self.layout.size.x
+        new_y = (self.y - self.layout.origin.y) / self.layout.size.y
 
-    # Functions used to perform coordinate arithmetic
+        x = matrix.b0 * new_x + matrix.b1 * new_y
+        y = matrix.b2 * new_x + matrix.b3 * new_y
+        z = -x - y
 
-    def hex_add(self, other):
-        """Function for adding two hex coordinates."""
-        return Hex(self.q + other.q, self.r + other.r, self.s + other.s)
+        x_r = round(x)
+        y_r = round(y)
+        z_r = round(z)
 
-    def hex_subtract(self, other):
-        """Function for substracting 'other' from 'self' coordinates."""
-        return Hex(self.q - other.q, self.r - other.r, self.s - other.s)
+        x_diff = abs(x_r - x)
+        y_diff = abs(y_r - y)
+        z_diff = abs(z_r - z)
 
-    def hex_multiply(self, other):
-        """Function for multiplying two hex coordinates."""
-        return Hex(self.q * other.q, self.r * other.r, self.s * other.s)
+        if x_diff > y_diff and x_diff > z_diff:
+            x_r = -y_r - z_r
+        elif y_diff > z_diff:
+            y_r = -x_r - z_r
+        else:
+            z_r = -x_r - y_r
 
-    # Functions calculating distance:
+        return Hex(x_r, y_r, z_r)
 
-    def hex_lenght(self):
-        """Returns distance (number of steps) from Hex(0, 0, 0)."""
-        return int((abs(self.q) + abs(self.r) + abs(self.s)) / 2)
+
+class Hex(pygame.math.Vector3):
+    """Class representing cube hexagonal coordinates, based on pygame Vector3 class."""
+
+    def __init__(self, x, y, z):
+        super().__init__(x, y, z)
+        self.layout = Layout()
+        assert self.x + self.y + \
+            self.z == 0, f"Hex coordinates must sum to 0, but now it's {self.x + self.y + self.z}."
+
+    def hex_length(self):
+        """Returns the lenght of the vector."""
+        return self.length() / 2
 
     def hex_distance(self, other):
-        """Returns distance (number of steps) from one hex coordinate to the other."""
-        dis = self.hex_subtract(other)
-        return (abs(dis.q) + abs(dis.r) + abs(dis.s)) / 2
-
-    # Instantiate HexDirections
-    dirs = HexDirections()
+        """Returns distance between self and other hexagon."""
+        return self.distance_to(other) / 2
 
     def hex_neighbor(self, direction):
-        """Returns coordinates of neighboring hexagon in a given direction (using self.dirs.<direction>"""
-        return self.hex_add(direction)
+        """Returns coordinates of neighboring hexagon in a given direction using the HexDirections dictionary."""
+        return self + HexDirections[direction]
 
-    def hex_to_pixel(self, layout):
-        matrix = layout.orientation
-        x = (matrix.f0 * self.q + matrix.f1 * self.r) * layout.size.x
-        y = (matrix.f2 * self.q + matrix.f3 * self.r) * layout.size.y
+    def hex_to_pixel(self):
+        matrix = self.layout.orientation
+        x = (matrix.f0 * self.x + matrix.f1 * self.y) * self.layout.size.x
+        y = (matrix.f2 * self.x + matrix.f3 * self.y) * self.layout.size.y
 
-        return Point(x + layout.origin.x, y + layout.origin.y)
+        return Point(x + self.layout.origin.x, y + self.layout.origin.y)
