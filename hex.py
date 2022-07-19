@@ -81,11 +81,13 @@ class Hex(pygame.math.Vector3):
 
     def hex_length(self):
         """Returns the lenght of the vector."""
-        return self.length() / 2
+        return int(self.length())
 
     def hex_distance(self, other):
         """Returns distance between self and other hexagon."""
-        return self.distance_to(other) / 2
+        result = other - self
+        result = Hex(result.x, result.y, result.z)
+        return result.hex_length()
 
     def hex_neighbor(self, direction):
         """Returns coordinates of neighboring hexagon in a given direction using the HexDirections dictionary."""

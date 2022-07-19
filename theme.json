@@ -135,7 +135,12 @@
     },
     "screen_space_health_bar":
     {
-        "prototype": "#default_shape_style"
+        "prototype": "#default_shape_style",
+        "colours":
+        {
+            "filled_bar": "#f71414",
+            "unfilled_bar": "#525252"
+        }
     },
     "progress_bar":
     {
